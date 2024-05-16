@@ -1,18 +1,17 @@
-FROM golang:1.15 as builder
-RUN go get github.com/codegangsta/negroni
-RUN go get github.com/gorilla/mux github.com/xyproto/simpleredis
-COPY main.go .
-RUN go build main.go
+# syntax=docker/dockerfile:1
+FROM golang:1.21 as build
+WORKDIR /src
+COPY <<EOF /src/main.go
+package main
 
-FROM ubuntu:18.04
+import "fmt"
 
-COPY --from=builder /go//main /app/guestbook
+func main() {
+  fmt.Println("hello, world")
+}
+EOF
+RUN go build -o /bin/hello ./main.go
 
-ADD public/index.html /app/public/index.html
-ADD public/script.js /app/public/script.js
-ADD public/style.css /app/public/style.css
-ADD public/jquery.min.js /app/public/jquery.min.js
-
-WORKDIR /app
-CMD ["./guestbook"]
-EXPOSE 3000
+FROM scratch
+COPY --from=build /bin/hello /bin/hello
+CMD ["/bin/hello"]
